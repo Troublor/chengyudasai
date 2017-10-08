@@ -1,3 +1,6 @@
 [submodule "Workerman"]
 	path = Workerman
 	url = https://github.com/walkor/Workerman.git
+[submodule "mysql"]
+	path = mysql
+	url = https://github.com/walkor/mysql.git

@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>PPT</title>
+    <script src="js/jquery.js"></script>
+    <script src="js/bootstrap.js"></script>
+    <script src="js/jquery.countdown.js"></script>
+    <link href="css/bootstrap.css" rel="stylesheet">
+
+    <style>
+        body{
+            background-image: url("img/WallPicture.jpg");
+            background-repeat:no-repeat;
+            background-position: top right;
+        }
+        .nav{
+            position: absolute;
+            left:-40px;
+            top:100px;
+        }
+        .nav li{
+            width:50px;
+            border:1px solid black;
+            font-size:22px;
+            text-align: center;
+            -webkit-border-radius:0 10px 10px 0;
+            -moz-border-radius:0 10px 10px 0;
+            border-radius:0 10px 10px 0;
+            height:169px;
+            padding:12px 12px;
+
+        }
+        .nav li:hover{
+            background-color: #5bc0de;
+            cursor: pointer;
+            color: #ffffff;
+        }
+        .notChosen{
+            background-color: lightgray;
+        }
+        .chosen{
+            background-color: #5bc0de;
+            color: #ffffff;
+        }
+        .table-title{
+            text-align: center;
+            font-weight:bold;
+            font-size:30px;
+        }
+        tbody img{
+            height:30px;
+            float: right;
+        }
+        .countdown{
+            text-align: center;
+            margin-top:35px;
+
+        }
+        .countDown{
+            margin:auto;
+            font-weight:bold;
+            font-size:400px;
+            text-align: center;
+            height:532px;
+        }
+        .countDownFinish{
+            margin: auto;
+            font-weight: bold;
+            text-align: center;
+            font-size: 201px;
+            height: 532px;
+            padding-top: 120px;
+        }
+        .entrance{
+            padding:130px 67px;
+            text-align: center;
+            font-size:30px;
+        }
+        .questionEntryContainer{
+            height:140px;
+            padding:40px 40px;
+        }
+        .questionEntry{
+            background-color: #64df10;
+            padding:20px 10px;
+            -webkit-border-radius: 10px;
+            -moz-border-radius: 10px;
+            border-radius: 10px;
+            -webkit-box-shadow:  1px 1px 16px grey;
+            -moz-box-shadow:  1px 1px 16px grey;
+            box-shadow:  1px 1px 16px grey;
+            cursor: pointer;
+        }
+        .back{
+            position: absolute;
+            bottom: 163px;
+            right: 200px;
+        }
+        .answer{
+            margin: auto;
+            float: right;
+            padding-top: 50px;
+            padding-right: 300px;
+            font-size: 30px;
+            color: red;
+        }
+        .questionBody{
+            text-align: center;
+            font-size: 40px;
+            margin: auto;
+            padding-top: 190px;
+            width: 640px;
+        }
+        .showAnswerBtn{
+            margin-right: 291px;
+            margin-top: 50px;
+            float: right;
+        }
+    </style>
+    
+    <script>
+
+        // 服务端ip为192.168.1.101
+        ws = new WebSocket("ws://192.168.1.101:1235");
+        ws.onopen = function() {
+
+        };
+        ws.onmessage = function(e) {
+            var data=eval("("+e.data+")");
+            if (data.getResponder==1){
+                document.getElementById("getResponder").play();
+            }
+        };
+
+        var clockMode=100;
+
+        function Clock() {
+            $("#clock").css("display","block");
+            $("#friendsHelp").css("display","none");
+            $("#rank").css("display","none");
+
+            $("#nav-clock").addClass("chosen");
+            $("#nav-friendsHelp").removeClass("chosen");
+            $("#nav-rank").removeClass("chosen");
+        }
+        
+        function FriendsHelp() {
+            $("#clock").css("display","none");
+            $("#friendsHelp").css("display","block");
+            $("#rank").css("display","none");
+
+            $("#nav-clock").removeClass("chosen").addClass("notChosen");
+            $("#nav-friendsHelp").addClass("chosen");
+            $("#nav-rank").removeClass("chosen");
+        }
+
+        function Rank() {
+            $("#clock").css("display","none");
+            $("#friendsHelp").css("display","none");
+            $("#rank").css("display","block");
+
+            $("#nav-clock").removeClass("chosen");
+            $("#nav-friendsHelp").removeClass("chosen");
+            $("#nav-rank").addClass("chosen");
+
+            $.post("getPPT.php",{
+                ask:"rank"
+            },function (data) {
+                data=eval("("+data+")");
+                $("#rank-body").html(data.rankBody);
+            });
+        }
+
+        function startCountDown() {
+            $("#start").prop("disabled",true);
+            $("#reset").prop("disabled",true);
+            $("#countDown").removeClass("countDownFinish").addClass("countDown");
+            if (clockMode==60||clockMode==100){
+                document.getElementById("ready").play();
+            }else{
+                start();
+                $('#stop').prop('disabled',false);
+            }
+
+        }
+
+        function start() {
+            $('#countDown').countdown(new Date().getTime()+clockMode*1000)
+                .on('update.countdown', function(event) {
+                    var format = '%M:%S';
+                    $(this).html(event.strftime(format));
+                    if (event.offset.minutes==0&&event.offset.seconds<=5){
+                        document.getElementById('runningTime').play();
+                    }
+                })
+                .on('finish.countdown', function(event) {
+                    $(this).html('时间到！').removeClass("countDown").addClass("countDownFinish");
+                    document.getElementById('runningTime').load();
+                    document.getElementById('timesUp').play();
+                });
+        }
+
+        function stopCountDown() {
+            $("#start").prop("disabled",false);
+            $("#stop").prop("disabled",true);
+            $("#reset").prop("disabled",false);
+            $("#countDown").countdown('stop');
+            document.getElementById('runningTime').load();
+        }
+
+        function resetCountDown() {
+            if (clockMode==60){
+                $("#countDown").html("01:00").removeClass("countDownFinish").addClass("countDown");
+            }else if (clockMode==10){
+                $("#countDown").html("00:10").removeClass("countDownFinish").addClass("countDown");
+            }else if (clockMode==20){
+                $("#countDown").html("00:20").removeClass("countDownFinish").addClass("countDown");
+            }else if (clockMode==100){
+                $("#countDown").html("01:40").removeClass("countDownFinish").addClass("countDown");
+            }
+            $("#reset").prop("disabled",true);
+        }
+
+        function showQuestion(q) {
+            $(".entrance").css("display","none");
+            $("#q"+q).css("display","block");
+        }
+
+        function back() {
+            $(".question").css("display","none");
+            $(".entrance").css("display","block");
+        }
+
+        function clock1min() {
+            clockMode=60;
+            $("#countDown").html("01:00").removeClass("countDownFinish").addClass("countDown");
+        }
+
+        function clock10sec() {
+            clockMode=10;
+            $("#countDown").html("00:10").removeClass("countDownFinish").addClass("countDown");
+        }
+
+        function clock20sec() {
+            clockMode=20;
+            $("#countDown").html("00:20").removeClass("countDownFinish").addClass("countDown");
+        }
+
+        function clock1min40sec() {
+            clockMode=100;
+            $("#countDown").html("01:40").removeClass("countDownFinish").addClass("countDown");
+        }
+
+    </script>
+</head>
+<body>
+    <div class="nav">
+        <ul type="none">
+            <li style="padding-top:36px;" onclick="Clock();" id="nav-clock" class="notChosen chosen">计时器</li>
+            <li style="padding-top:21px;" onclick="FriendsHelp();" id="nav-friendsHelp" class="notChosen">亲友助阵</li>
+            <li style="padding-top:36px;" onclick="Rank();" id="nav-rank" class="notChosen">积分榜</li>
+        </ul>
+    </div>
+    <div class="transparent">
+        <div class="container" style="margin: 0 50px;">
+
+            <!--计时器-->
+            <div id="clock" style="display: block;">
+                <div class="countdown">
+                    <div id="mod">
+                        <button class="btn" onclick="clock1min40sec();">100秒</button>
+                        <button class="btn" onclick="clock1min();">60秒</button>
+                        <button class="btn" onclick="clock20sec();">20秒</button>
+                        <button class="btn" onclick="clock10sec();">10秒</button>
+                    </div>
+                    <div id="countDown" class="countDown">01:40</div>
+                    <div class="row">
+                        <div class="col-sm-4 pull-left">
+                            <button class="btn btn-warning" id="reset" onclick="resetCountDown();" disabled>&nbsp;&nbsp;&nbsp;&nbsp;复位&nbsp;&nbsp;&nbsp;&nbsp;</button>
+                        </div>
+                        <div class="col-sm-4" style="text-align: center;">
+                            <button class="btn btn-success" id="start" onclick="startCountDown();">&nbsp;&nbsp;&nbsp;&nbsp;开始&nbsp;&nbsp;&nbsp;&nbsp;</button>
+                        </div>
+                        <div class="col-sm-4 pull-right">
+                            <button class="btn btn-danger" id="stop" onclick="stopCountDown();" disabled>&nbsp;&nbsp;&nbsp;&nbsp;停止&nbsp;&nbsp;&nbsp;&nbsp;</button>
+                        </div>
+                </div>
+                </div>
+            </div>
+
+            <!--亲友助阵题目-->
+            <div id="friendsHelp" style="display: none;">
+                <div class="entrance">
+                    <h2>选择一道题目</h2>
+                    <div class="row">
+                        <div class="col-sm-3 questionEntryContainer">
+                            <div class="questionEntry" onclick="showQuestion(1)">
+                                <span>1</span>
+                            </div>
+                        </div>
+                        <div class="col-sm-3 questionEntryContainer">
+                            <div class="questionEntry" onclick="showQuestion(2)">
+                                <span>2</span>
+                            </div>
+                        </div>
+                        <div class="col-sm-3 questionEntryContainer">
+                            <div class="questionEntry" onclick="showQuestion(3)">
+                                <span>3</span>
+                            </div>
+                        </div>
+                        <div class="col-sm-3 questionEntryContainer">
+                            <div class="questionEntry" onclick="showQuestion(4)">
+                                <span>4</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-3 questionEntryContainer">
+                            <div class="questionEntry" onclick="showQuestion(5)">
+                                <span>5</span>
+                            </div>
+                        </div>
+                        <div class="col-sm-3 questionEntryContainer">
+                            <div class="questionEntry" onclick="showQuestion(6)">
+                                <span>6</span>
+                            </div>
+                        </div>
+                        <div class="col-sm-3 questionEntryContainer">
+                            <div class="questionEntry" onclick="showQuestion(7)">
+                                <span>7</span>
+                            </div>
+                        </div>
+                        <div class="col-sm-3 questionEntryContainer">
+                            <div class="questionEntry" onclick="showQuestion(8)">
+                                <span>8</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-3 questionEntryContainer">
+                            <div class="questionEntry" onclick="showQuestion(9)">
+                                <span>9</span>
+                            </div>
+                        </div>
+                        <div class="col-sm-3 questionEntryContainer">
+                            <div class="questionEntry" onclick="showQuestion(10)">
+                                <span>10</span>
+                            </div>
+                        </div>
+                        <div class="col-sm-3 questionEntryContainer">
+                            <div class="questionEntry" onclick="showQuestion(11)">
+                                <span>11</span>
+                            </div>
+                        </div>
+                        <div class="col-sm-3 questionEntryContainer">
+                            <div class="questionEntry" onclick="showQuestion(12)">
+                                <span>12</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="questions">
+                    <div class="question" id="q1" style="display: none;">
+                       <div class="questionBody">山重水复疑无路，柳暗花明又一村</div>
+                        <button class="btn btn-primary showAnswerBtn" value="1">显示答案</button>
+                        <div class="answer" style="display: none;">答案：绝处逢生</div>
+                        <button class="btn btn-primary back" onclick="back();" ><span class="glyphicon glyphicon-menu-left"></span>&nbsp; 返回</button>
+                    </div>
+                    <div class="question" id="q2" style="display: none;">
+                        <div class="questionBody">《庄子·天运》:“故西施病心而矉其里，其里之丑人见而美之，归亦捧心而矉其里。其里之富人见之，坚闭门而不出；贫人见之，絜妻子而去之走。”</div>
+                        <button class="btn btn-primary showAnswerBtn" value="1">显示答案</button>
+                        <div class="answer" style="display: none;">答案：东施效颦</div>
+                        <button class="btn btn-primary back" onclick="back();" ><span class="glyphicon glyphicon-menu-left"></span>&nbsp; 返回</button>
+                    </div>
+                    <div class="question" id="q3" style="display: none;">
+                        <div class="questionBody">欲穷千里目，更上一城楼</div>
+                        <button class="btn btn-primary showAnswerBtn" value="1">显示答案</button>
+                        <div class="answer" style="display: none;">答案：高瞻远瞩</div>
+                        <button class="btn btn-primary back" onclick="back();" ><span class="glyphicon glyphicon-menu-left"></span>&nbsp; 返回</button>
+                    </div>
+                    <div class="question" id="q4" style="display: none;">
+                        <div class="questionBody">汉·赵晔《吴越春秋·勾践入臣外传》：“时过于期；否终则泰。”</div>
+                        <button class="btn btn-primary showAnswerBtn" value="1">显示答案</button>
+                        <div class="answer" style="display: none;">答案：否极泰来</div>
+                        <button class="btn btn-primary back" onclick="back();" ><span class="glyphicon glyphicon-menu-left"></span>&nbsp; 返回</button>
+                    </div>
+                    <div class="question" id="q5" style="display: none;">
+                        <div class="questionBody">《后汉书·杜密传》：“刘胜位为大夫，见礼上宾，而知善不荐，闻恶无言，隐情惜己，自同寒蝉，此罪人也。”</div>
+                        <button class="btn btn-primary showAnswerBtn" value="1">显示答案</button>
+                        <div class="answer" style="display: none;">答案：噤若寒蝉</div>
+                        <button class="btn btn-primary back" onclick="back();" ><span class="glyphicon glyphicon-menu-left"></span>&nbsp; 返回</button>
+                    </div>
+                    <div class="question" id="q6" style="display: none;">
+                        <div class="questionBody">金河一去路千千，欲到天边更有天</div>
+                        <button class="btn btn-primary showAnswerBtn" value="1">显示答案</button>
+                        <div class="answer" style="display: none;">答案：天外有天</div>
+                        <button class="btn btn-primary back" onclick="back();" ><span class="glyphicon glyphicon-menu-left"></span>&nbsp; 返回</button>
+                    </div>
+                    <div class="question" id="q7" style="display: none;">
+                        <div class="questionBody">《枕中记》记载：有个卢生在一个店里向一道士诉说自己的贫困；道士送给他一个枕头；他枕上去就睡着了；做梦享尽了荣华富贵。这时店主人煮上一锅小米饭；卢生一梦醒来；小米饭还未煮熟。</div>
+                        <button class="btn btn-primary showAnswerBtn" value="1">显示答案</button>
+                        <div class="answer" style="display: none;">答案：黄粱美梦</div>
+                        <button class="btn btn-primary back" onclick="back();" ><span class="glyphicon glyphicon-menu-left"></span>&nbsp; 返回</button>
+                    </div>
+                    <div class="question" id="q8" style="display: none;">
+                        <div class="questionBody">《庄子·秋水》：“据说；河神因河水大涨而自以为了不起。后来到了海边；看到无边无际的大洋；于是望洋向若而叹。”</div>
+                        <button class="btn btn-primary showAnswerBtn" value="1">显示答案</button>
+                        <div class="answer" style="display: none;">答案：望洋兴叹</div>
+                        <button class="btn btn-primary back" onclick="back();" ><span class="glyphicon glyphicon-menu-left"></span>&nbsp; 返回</button>
+                    </div>
+                    <div class="question" id="q9" style="display: none;">
+                        <div class="questionBody">《汉书·贾谊传》：“鼠近于器；尚惮不投；恐伤其器；况于贵臣之近主乎！”</div>
+                        <button class="btn btn-primary showAnswerBtn" value="1">显示答案</button>
+                        <div class="answer" style="display: none;">答案：投鼠忌器</div>
+                        <button class="btn btn-primary back" onclick="back();" ><span class="glyphicon glyphicon-menu-left"></span>&nbsp; 返回</button>
+                    </div>
+                    <div class="question" id="q10" style="display: none;">
+                        <div class="questionBody">出自《南齐书·礼志上·晋傅玄朝会赋》，大多用来形容张灯结彩或大放焰火的灿烂夜景。</div>
+                        <button class="btn btn-primary showAnswerBtn" value="1">显示答案</button>
+                        <div class="answer" style="display: none;">答案：火树银花</div>
+                        <button class="btn btn-primary back" onclick="back();" ><span class="glyphicon glyphicon-menu-left"></span>&nbsp; 返回</button>
+                    </div>
+                    <div class="question" id="q11" style="display: none;">
+                        <div class="questionBody">西汉·戴圣《礼记·大学》：“富润屋，德润身，心广体胖。”</div>
+                        <button class="btn btn-primary showAnswerBtn" value="1">显示答案</button>
+                        <div class="answer" style="display: none;">答案：心宽体胖</div>
+                        <button class="btn btn-primary back" onclick="back();" ><span class="glyphicon glyphicon-menu-left"></span>&nbsp; 返回</button>
+                    </div>
+                    <div class="question" id="q12" style="display: none;">
+                        <div class="questionBody">出自唐·韩愈《进学解》：“障百川而东之，回狂澜于既倒。”</div>
+                        <button class="btn btn-primary showAnswerBtn" value="1">显示答案</button>
+                        <div class="answer" style="display: none;">答案：力挽狂澜</div>
+                        <button class="btn btn-primary back" onclick="back();" ><span class="glyphicon glyphicon-menu-left"></span>&nbsp; 返回</button>
+                    </div>
+                </div>
+            </div>
+
+            <!--排名-->
+            <div id="rank" style="display: none; margin: auto;">
+                <table class="table table-bordered table-hover">
+                    <caption class="table-title">积分榜</caption>
+                    <thead style="font-size: 25px;">
+                    <tr>
+                        <th>小组</th>
+                        <th>第一轮</th>
+                        <th>第二轮</th>
+                        <th>亲友助阵</th>
+                        <th>第三轮</th>
+                        <th>第四轮</th>
+                        <th>总积分</th>
+                    </tr>
+                    </thead>
+                    <tbody id="rank-body" style="font-size: 30px; font-weight: bold;">
+
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <audio src="audio/ready.mp3" controls="controls" id="ready" onended="start();$('#stop').prop('disabled',false);" style="display: none;">
+    </audio>
+    <audio src="audio/runningTime.wav" controls="controls" id="runningTime" onended="this.play();" style="display: none;">
+    </audio>
+    <audio src="audio/timesUp.wav" controls="controls" id="timesUp" style="display: none;">
+    </audio>
+    <audio src="audio/responderSuccess.wav" controls="controls" id="getResponder" style="visibility: hidden; display: none;">
+    </audio>
+<script>
+    $(function () {
+        $(".questionEntry").click(function () {
+            $(this).css("background-color","grey").css("box-shadow","inset 0px 0px 9px black");
+        });
+        $(".showAnswerBtn").click(function () {
+            $(this).css("display","none");
+            $(this).next(".answer").css("display","block");
+        });
+    })
+</script>
+</body>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        </body>
+</html>

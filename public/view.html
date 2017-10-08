@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Client</title>
+    <script src="js/jquery.js"></script>
+    <script src="js/bootstrap.js"></script>
+    <link href="css/bootstrap.css" rel="stylesheet">
+    <script>
+        $(function () {
+            // 服务端ip为192.168.1.101
+            ws = new WebSocket("ws://192.168.1.101:1235");
+            ws.onopen = function() {
+
+            };
+            ws.onmessage = function(e) {
+                var data=eval("("+e.data+")");
+                if (data.showResponder==1){
+                    $("#showChengyu").css("display","none");
+                    $("#responder").css("display","block");
+                }
+                if (data.showChengyu==1){
+                    $("#responder").css("display","none");
+                    $("#showChengyu").css("display","block");
+                }
+                if (data.responderSuccess==1) {
+                    $("#responderArea").removeClass("responder").addClass("responderSuccess").html("抢答成功");
+                    a();
+                }
+                if (data.resetResponder==1){
+                    $("#responderArea").addClass("responder").removeClass("responderSuccess").html("点击抢答");
+                }
+                if (data.chengyu!=="")              //成语由workerman提供
+                {
+                    changeChengyu(data.chengyu);
+                }
+                if (data.fail!==undefined){
+                    $("#fail").html(data.fail);
+                    $("#failModal").modal('show');
+                }
+            };
+        });
+
+
+        function changeChengyu(chengyu) {
+            $("#chengyu").html(chengyu);
+        }
+
+        function responder() {
+            data={
+                act:"responder"
+            };
+            ws.send(JSON.stringify(data));
+        }
+    </script>
+    <style>
+        body{
+            background-image: url("img/WallPicture.jpg");
+        }
+        .chengyuContainer h1{
+            position: absolute;
+            top:236px;
+            right:296px;
+            font-size:5.5em;
+        }
+        .responderContainer{
+            position: absolute;
+            top: 117px;
+            right: 356px;
+        }
+        .responder{
+            height: 223px;
+            background: #337ab7;
+            width: 315px;
+            border-radius: 40px;
+            box-shadow: 3px 3px 10px black;
+            font-size: 40px;
+            font-weight: bold;
+            text-align: center;
+            padding-top: 85px;
+        }
+        .responderSuccess{
+            background:#40dd0c;
+            height: 223px;
+            width: 315px;
+            border-radius: 40px;
+            box-shadow: 3px 3px 10px black;
+            font-size: 40px;
+            font-weight: bold;
+            text-align: center;
+            padding-top: 85px;
+        }
+    </style>
+</head>
+<body>
+<div class="container" id="showChengyu" style="display: block;">
+    <div class="chengyuContainer">
+        <h1 id="chengyu">
+            欢迎参赛
+        </h1>
+    </div>
+</div>
+<script>
+    function a() {
+        document.getElementById('responderSuccess').load();
+        document.getElementById('responderSuccess').play();
+    }
+</script>
+<div class="container" id="responder" style="display: none;">
+    <div class="responderContainer">
+        <div class="responder" onclick="responder();" id="responderArea">
+            点击抢答
+        </div>
+    </div>
+</div>
+
+<!-- 警告提示框 -->
+<div class="modal fade" id="failModal" tabindex="-1" role="dialog" aria-labelledby="failModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                <h4 class="modal-title" id="failModalLabel">提示</h4>
+            </div>
+            <div class="modal-body" id="fail"></div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+            </div>
+        </div><!-- /.modal-content -->
+    </div><!-- /.modal -->
+</div>
+<audio src="audio/responderSuccess.wav" controls="controls" id="responderSuccess" style="visibility: hidden; display: none;">
+</audio>
+</body>
+</html>

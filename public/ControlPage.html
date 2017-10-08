@@ -1,0 +1,1164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>成语大赛控制界面</title>
+    <script src="js/jquery.js"></script>
+    <script src="js/bootstrap.js"></script>
+    <link href="css/bootstrap.css" rel="stylesheet">
+
+    <script>
+        var ws=new WebSocket("ws://192.168.1.101:1234");
+        ws.onmessage=function (e) {
+            var data=eval("("+e.data+")");
+            if (data.chengyu!==undefined)              //成语由workerman提供
+            {
+                $(".thumbnail").children("p").html(data.chengyu);
+            }
+            if (data.part==="part1"){
+                if (data.msg!==undefined){
+                    $("#part1-msg").append(data.msg);
+                }
+                if (data.alrt!==undefined){
+                    $("#alrt").html(data.alrt);
+                    $("#alertModal").modal("show");
+                }
+            }
+            if (data.part==="part3"){
+                if (data.msg!==undefined){
+                    $("#part3-msg").append(data.msg);
+                }
+                if (data.alrt!==undefined){
+                    $("#alrt").html(data.alrt);
+                    $("#alertModal").modal("show");
+                }
+            }
+            if (data.part==="part4"){
+                if (data.msg!==undefined){
+                    $("#part4-msg").append(data.msg);
+                }
+                if (data.alrt!==undefined){
+                    $("#alrt").html(data.alrt);
+                    $("#alertModal").modal("show");
+                }
+            }
+
+        };
+
+        /**
+         * 切换至主页
+         */
+        function home() {
+            $("ul li").removeClass("active");
+            $("#nav-home").addClass("active");
+
+            $("#home").css("display","block");
+            $("#part1").css("display","none");
+            $("#part2").css("display","none");
+            $("#extraPart").css("display","none");
+            $("#part3").css("display","none");
+            $("#part4").css("display","none");
+
+        }
+
+        /**
+         * 切换至第一关
+         */
+        function part1() {
+            $("ul li").removeClass("active");
+            $("#nav-part1").addClass("active");
+
+            $("#home").css("display","none");
+            $("#part1").css("display","block");
+            $("#part2").css("display","none");
+            $("#extraPart").css("display","none");
+            $("#part3").css("display","none");
+            $("#part4").css("display","none");
+
+
+        }
+
+        /**
+         * 切换至第二关
+         */
+        function part2() {
+            $("ul li").removeClass("active");
+            $("#nav-part2").addClass("active");
+
+            $("#home").css("display","none");
+            $("#part1").css("display","none");
+            $("#part2").css("display","block");
+            $("#extraPart").css("display","none");
+            $("#part3").css("display","none");
+            $("#part4").css("display","none");
+        }
+
+        /**
+         * 切换至亲友助阵
+         */
+        function extraPart() {
+            $("ul li").removeClass("active");
+            $("#nav-extraPart").addClass("active");
+
+            $("#home").css("display","none");
+            $("#part1").css("display","none");
+            $("#part2").css("display","none");
+            $("#extraPart").css("display","block");
+            $("#part3").css("display","none");
+            $("#part4").css("display","none");
+        }
+
+        /**
+         * 切换至第三关
+         */
+        function part3(){
+            $("ul li").removeClass("active");
+            $("#nav-part3").addClass("active");
+
+            $("#home").css("display","none");
+            $("#part1").css("display","none");
+            $("#part2").css("display","none");
+            $("#extraPart").css("display","none");
+            $("#part3").css("display","block");
+            $("#part4").css("display","none");
+        }
+
+        /**
+         * 切换至第四关
+         */
+        function part4() {
+            $("ul li").removeClass("active");
+            $("#nav-part4").addClass("active");
+
+            $("#home").css("display","none");
+            $("#part1").css("display","none");
+            $("#part2").css("display","none");
+            $("#extraPart").css("display","none");
+            $("#part3").css("display","none");
+            $("#part4").css("display","block");
+        }
+
+        /**
+         * 第一关——操作
+         */
+        function Part1Action(action){
+            var group=$("#part1-group").val();
+            var data={
+                part:"part1",
+                group:group,
+                act:action
+            };
+            ws.send(JSON.stringify(data));
+        }
+
+        /**
+         * 第一关，开始
+         */
+        function Part1Start(){
+            var select=$("#part1-group");
+            var group=select.val();
+            var data={
+                part:"part1",
+                group:group,
+                act:"start"
+            };
+            ws.send(JSON.stringify(data));
+
+            select.attr("disabled",true);
+            $("#part1-btn").children("button").attr("disabled",false);
+            $("#part1-end").attr("disabled",false);
+            $("#part1-start").attr("disabled",true);
+        }
+
+        /**
+         * 第一关，时间到
+         */
+        function Part1End() {
+            var select=$("#part1-group");
+            var group=select.val();
+            var data={
+                part:"part1",
+                group:group,
+                act:"end"
+            };
+            ws.send(JSON.stringify(data));
+
+            select.attr("disabled",false);
+            $("#part1-btn").children("button").attr("disabled",true);
+            $("#part1-end").attr("disabled",true);
+            $("#part1-start").attr("disabled",false);
+        }
+
+        /**
+         * 第二关，提交成绩
+         */
+        function Part2Submit() {
+            var groupOneSelect=$("select[name=part2-groupOne]");
+            var groupTwoSelect=$("select[name=part2-groupTwo]");
+
+            var groupOne=groupOneSelect.val();
+            var groupTwo=groupTwoSelect.val();
+
+            if (groupOne==""||groupTwo==""){
+                $("#alrt").html("请选择两个组后，再提交");
+                $("#alertModal").modal('show');
+                return;
+            }
+            if (groupOne==groupTwo){
+                $("#alrt").html("两个组不能选成一样的");
+                $("#alertModal").modal('show');
+                return;
+            }
+
+            var groupOneCount=0;
+            var groupTwoCount=0;
+
+            if ($("input[name=part2-q1-groupOne-win]").is(":checked")){
+                groupOneCount++;
+            }
+            if ($("input[name=part2-q1-groupTwo-win]").is(":checked")){
+                groupTwoCount++;
+            }
+
+            if ($("input[name=part2-q2-groupOne-win]").is(":checked")){
+                groupOneCount++;
+            }
+            if ($("input[name=part2-q2-groupTwo-win]").is(":checked")){
+                groupTwoCount++;
+            }
+
+            if ($("input[name=part2-q3-groupOne-win]").is(":checked")){
+                groupOneCount++;
+            }
+            if ($("input[name=part2-q3-groupTwo-win]").is(":checked")){
+                groupTwoCount++;
+            }
+
+            if ($("input[name=part2-q4-groupOne-win]").is(":checked")){
+                groupOneCount++;
+            }
+            if ($("input[name=part2-q4-groupTwo-win]").is(":checked")){
+                groupTwoCount++;
+            }
+
+            if ($("input[name=part2-q5-groupOne-win]").is(":checked")){
+                groupOneCount++;
+            }
+            if ($("input[name=part2-q5-groupTwo-win]").is(":checked")){
+                groupTwoCount++;
+            }
+
+
+
+            var success=1;
+            $.post("save.php",{
+                part:"part2",
+                group:groupOne,
+                score:groupOneCount
+            },function (data) {
+                data=eval("("+data+")");
+                if (data.msg!==undefined){
+                    $("#part2-msg").append(data.msg);
+                }
+                if (data.error!==undefined){
+                    $("#part2-msg").append(data.error);
+                    success=0;
+                }
+            });
+            $.post("save.php",{
+                part:"part2",
+                group:groupTwo,
+                score:groupTwoCount
+            },function (data) {
+                data=eval("("+data+")");
+                if (data.msg!==undefined){
+                    $("#part2-msg").append(data.msg);
+                }
+                if (data.error!==undefined){
+                    $("#part2-msg").append(data.error);
+                    success=0;
+                }
+            });
+
+            if (success){
+                groupOneSelect.children("option").prop("selected",false);
+                groupTwoSelect.children("option").prop("selected",false);
+                groupOneSelect.children(".part2-select-default").prop("selected",true);
+                groupTwoSelect.children(".part2-select-default").prop("selected",true);
+                $("input[type=checkbox]").prop("checked",false);
+            }
+        }
+
+        /**
+         * 第二关，切换成语
+         */
+        function Part2Next(){
+            var data={
+                part:"part2",
+                act:"next"
+            };
+            ws.send(JSON.stringify(data));
+        }
+
+        /**
+         * 第三关——操作
+         */
+        function Part3Action(action){
+            var group=$("#part3-group").val();
+            var data={
+                part:"part3",
+                group:group,
+                act:action
+            };
+            ws.send(JSON.stringify(data));
+        }
+
+        /**
+         * 第三关，开始
+         */
+        function Part3Start(){
+            var select=$("#part3-group");
+            var group=select.val();
+            var data={
+                part:"part3",
+                group:group,
+                act:"start"
+            };
+            ws.send(JSON.stringify(data));
+
+            select.attr("disabled",true);
+            $("#part3-btn").children("button").attr("disabled",false);
+            $("#part3-end").attr("disabled",false);
+            $("#part3-start").attr("disabled",true);
+        }
+
+        /**
+         * 第三关，时间到
+         */
+        function Part3End() {
+            var select=$("#part3-group");
+            var group=select.val();
+            var data={
+                part:"part3",
+                group:group,
+                act:"end",
+                time:"60"
+            };
+            ws.send(JSON.stringify(data));
+
+            select.attr("disabled",false);
+            $("#part3-btn").children("button").attr("disabled",true);
+            $("#part3-end").attr("disabled",true);
+            $("#part3-start").attr("disabled",false);
+        }
+
+        /**
+         * 第四关，提交成绩
+         */
+        function Part4Submit() {
+            var groupOneSelect=$("select[name=part4-groupOne]");
+            var groupTwoSelect=$("select[name=part4-groupTwo]")
+
+            var groupOne=groupOneSelect.val();
+            var groupTwo=groupTwoSelect.val();
+
+            if (groupOne==""||groupTwo==""){
+                $("#alrt").html("请选择两个组后，再提交");
+                $("#alertModal").modal('show');
+                return;
+            }
+            if (groupOne==groupTwo){
+                $("#alrt").html("两个组不能选成一样的");
+                $("#alertModal").modal('show');
+                return;
+            }
+
+            var groupOneCount=0;
+            var groupTwoCount=0;
+
+            if ($("input[name=part4-q1-groupOne-win]").is(":checked")){
+                groupOneCount++;
+            }
+            if ($("input[name=part4-q1-groupTwo-win]").is(":checked")){
+                groupTwoCount++;
+            }
+
+            if ($("input[name=part4-q2-groupOne-win]").is(":checked")){
+                groupOneCount++;
+            }
+            if ($("input[name=part4-q2-groupTwo-win]").is(":checked")){
+                groupTwoCount++;
+            }
+
+            if ($("input[name=part4-q3-groupOne-win]").is(":checked")){
+                groupOneCount++;
+            }
+            if ($("input[name=part4-q3-groupTwo-win]").is(":checked")){
+                groupTwoCount++;
+            }
+
+            if ($("input[name=part4-q4-groupOne-win]").is(":checked")){
+                groupOneCount++;
+            }
+            if ($("input[name=part4-q4-groupTwo-win]").is(":checked")){
+                groupTwoCount++;
+            }
+
+            if ($("input[name=part4-q5-groupOne-win]").is(":checked")){
+                groupOneCount++;
+            }
+            if ($("input[name=part4-q5-groupTwo-win]").is(":checked")){
+                groupTwoCount++;
+            }
+
+
+            var success=1;
+            $.post("save.php",{
+                part:"part4",
+                group:groupOne,
+                score:groupOneCount
+            },function (data) {
+                data=eval("("+data+")");
+                if (data.msg!==undefined){
+                    $("#part4-msg").append(data.msg);
+                }
+                if (data.error!==undefined){
+                    $("#part4-msg").append(data.error);
+                    success=0;
+                }
+            });
+            $.post("save.php",{
+                part:"part4",
+                group:groupTwo,
+                score:groupTwoCount
+            },function (data) {
+                data=eval("("+data+")");
+                if (data.msg!==undefined){
+                    $("#part4-msg").append(data.msg);
+                }
+                if (data.error!==undefined){
+                    $("#part4-msg").append(data.error);
+                    success=0;
+                }
+            });
+
+            if (success){
+                groupOneSelect.children("option").prop("selected",false);
+                groupTwoSelect.children("option").prop("selected",false);
+                groupOneSelect.children(".part4-select-default").prop("selected",true);
+                groupTwoSelect.children(".part4-select-default").prop("selected",true);
+                $("input[type=checkbox]").prop("checked",false);
+            }
+        }
+
+        /**
+         * 亲友助阵，提交成绩
+         */
+        function extraPartSubmit(){
+            var success=1;
+            var checkbox=$("input[name=extraPart-group]");
+            checkbox.each(function () {
+                if ($(this).is(":checked")){
+                    var group=$(this).val();
+                    $.post("save.php",{
+                        group:group,
+                        part:"extrapart",
+                        score:1
+                    },function (data) {
+
+                        data=eval("("+data+")");
+                        if (data.msg!==undefined){
+                            $("#extraPart-msg").append(data.msg);
+                        }
+                        if (data.error!==undefined){
+                            $("#extraPart-msg").append(data.error);
+                            success=0;
+                        }
+                    });
+
+                }
+            });
+            if(success){
+                checkbox.prop("checked",false);
+            }
+        }
+
+        /**
+         * 淘汰组
+         */
+        function eliminateGroup(){
+            var select=$("select[name=eliminate-group]");
+            var group=select.val();
+            if (group!==""){
+                $.post("save.php",{
+                    part:"eliminate",
+                    group:group,
+                    score:1
+                },function (data) {
+                    data=eval("("+data+")");
+                    if(data.error!==undefined){
+                        $("#alrt").html(data.error);
+                        $("#alertModal").modal('show');
+                        select.children("option").prop("selected",false);
+                        select.children("option[value=]").prop("selected",true);
+                        return;
+                    }
+                    if(data.msg!==undefined){
+                        $("#alrt").html(group+"：已淘汰");
+                        $("#alertModal").modal('show');
+                        select.children("option").prop("selected",false);
+                        select.children("option[value=]").prop("selected",true);
+                    }
+                });
+            }
+        }
+
+        /**
+         * 打开客户端抢答器
+         */
+        function showResponder(){
+            data={
+                part:"part4",
+                act:"showResponder"
+            };
+            ws.send(JSON.stringify(data));
+        }
+
+        /**
+         * 打开客户端成语显示
+         */
+        function showChengyu() {
+            data={
+                part:"part1",
+                act:"showChengyu"
+            };
+            ws.send(JSON.stringify(data));
+        }
+
+        /**
+         * 复位抢答器
+         */
+        function resetResponder() {
+            data={
+                part:"part4",
+                act:"resetResponder"
+            };
+            ws.send(JSON.stringify(data));
+        }
+
+        /**
+         * 复位平板显示画面
+         */
+        function resetClientView(){
+            data={
+                reset:"client"
+            };
+            ws.send(JSON.stringify(data));
+        }
+    </script>
+    
+    <style>
+        #main{
+            min-height:400px;
+        }
+        .containBox{
+            padding: 10px;
+        }
+        .thumbnail img{
+        }
+        .thumbnail p{
+            position: absolute;
+            top:152px;
+            right:185px;
+            font-size: 2em;
+
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1 style="text-align: center;">成语大赛计分控制台</h1>
+    <hr>
+    <ul class="nav nav-tabs nav-justified" id="nav">
+        <li id="nav-home" class="active"><a href="#" onclick="home();">Home</a></li>
+        <li id="nav-part1"><a href="#" onclick="part1();">第一关</a></li>
+        <li id="nav-part2"><a href="#" onclick="part2();">第二关</a></li>
+        <li id="nav-extraPart"><a href="#" onclick="extraPart();">亲友助阵</a></li>
+        <li id="nav-part3"><a href="#" onclick="part3();">第三关</a></li>
+        <li id="nav-part4"><a href="#" onclick="part4();">第四关</a></li>
+    </ul>
+    <br>
+    <div class="row">
+        <div class="col-sm-2">
+            <button class="btn btn-success" onclick="document.getElementById('right').play();">正确提示音</button>
+        </div>
+        <div class="col-sm-2">
+            <button class="btn btn-danger" onclick="document.getElementById('error').play();">错误提示音</button>
+        </div>
+        <div class="col-sm-2">
+            <button class="btn btn-warning" onclick="resetClientView();">复位成语</button>
+        </div>
+        <div class="col-sm-offset-2 col-sm-3">
+            <select class="form-control" name="eliminate-group" id="eliminate-group">
+                <option value="" selected>请选择</option>
+                <option value="group1">第一组</option>
+                <option value="group2">第二组</option>
+                <option value="group3">第三组</option>
+                <option value="group4">第四组</option>
+                <option value="group5">第五组</option>
+                <option value="group6">第六组</option>
+                <option value="group7">第七组</option>
+                <option value="group8">第八组</option>
+                <option value="group9">第九组</option>
+                <option value="group10">第十组</option>
+                <option value="group11">第十一组</option>
+                <option value="group12">第十二组</option>
+            </select>
+        </div>
+        <div class="col-sm-1">
+            <button class="btn btn-danger" id="eliminateGroup" onclick="eliminateGroup();"><span class="glyphicon glyphicon-remove"></span>&nbsp;淘汰</button>
+        </div>
+    </div>
+    <br>
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h3 class="panel-title">
+                控制台
+            </h3>
+        </div>
+        <div class="panel-body" id="main">
+            <!--home页面内容-->
+            <div id="home" style="display: block;">
+                <h1 style="font-size: 4em; text-align: center;">欢迎使用成语大赛控制台</h1>
+            </div>
+
+            <!--第一轮控制页面内容-->
+            <div id="part1" style="display: none;">
+                <div class="row">
+                    <div class="col-sm-8 containBox">
+                        <div class="thumbnail">
+                            <img class="img-rounded img-responsive" src="img/WallPicture.jpg">
+                            <p>欢迎参赛</p>
+                        </div>
+                        <div class="form-group pull-left">
+                            <label for="part1-group">当前组：</label>
+                            <select class="form-control" name="part1-group" id="part1-group">
+                                <option value="group1">第一组</option>
+                                <option value="group2">第二组</option>
+                                <option value="group3">第三组</option>
+                                <option value="group4">第四组</option>
+                                <option value="group5">第五组</option>
+                                <option value="group6">第六组</option>
+                                <option value="group7">第七组</option>
+                                <option value="group8">第八组</option>
+                                <option value="group9">第九组</option>
+                                <option value="group10">第十组</option>
+                                <option value="group11">第十一组</option>
+                                <option value="group12">第十二组</option>
+                                <option value="extraGroup">加赛</option>
+                            </select>
+                            <button class="btn" onclick="Part1Start();" id="part1-start"><span class="glyphicon glyphicon-play"></span>&nbsp;回合开始</button>
+                            <button class="btn btn-primary" onclick="Part1End();" id="part1-end" disabled="disabled"><span class="glyphicon glyphicon-minus-sign">&nbsp;时间到</span></button>
+                        </div>
+                        <div class="pull-right" id="part1-btn">
+                            <button class="btn btn-danger" style="margin:10px 40px;" onclick="Part1Action('breakLaw');document.getElementById('error').play();" disabled="disabled"><span class="glyphicon glyphicon-remove"></span>&nbsp;犯规</button>
+                            <button class="btn btn-warning" style="margin:10px 40px;" onclick="Part1Action('skip');" disabled="disabled"><span class="glyphicon glyphicon-warning-sign"></span>&nbsp;跳过</button>
+                            <button class="btn btn-success" style="margin:10px 40px;" onclick="Part1Action('correct');document.getElementById('right').play();" disabled="disabled"><span class="glyphicon glyphicon-ok"></span>&nbsp;正确</button>
+                        </div>
+
+                    </div>
+                    <div class="col-sm-4 containBox">
+                        <div class="panel-group" id="part1-accordion">
+                            <div class="panel panel-default">
+                                <div class="panel-heading">
+                                    <h4 class="panel-title">
+                                        <a data-toggle="collapse" data-parent="#part1-accordion"
+                                           href="#part1-collapseOne">
+                                            查看服务器返回信息
+                                        </a>
+                                    </h4>
+                                </div>
+                                <div id="part1-collapseOne" class="panel-collapse collapse in">
+                                    <div class="panel-body" id="part1-msg">
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 第二轮控制页面内容 -->
+            <div id="part2" style="display: none;">
+                <div class="row">
+                    <div class="col-sm-8 containBox">
+                        <div class="thumbnail" id="part2-thumbnail">
+                            <img class="img-rounded img-responsive" src="img/WallPicture.jpg">
+                            <p>欢迎参赛</p>
+                        </div>
+
+                            <div class="row">
+                                <div class="col-sm-10">
+                                    <div class="row" style="margin-bottom: 10px;">
+                                        <div class="col-sm-offset-4 col-sm-3">
+                                            <h3 style="text-align: center;">比赛结果</h3><hr>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-sm-offset-1 col-sm-3">
+                                            <select class="form-control pull-left" name="part2-groupOne" id="part2-groupOne">
+                                                <option value="" class="part2-select-default">选择组</option>
+                                                <option value="group1">第一组</option>
+                                                <option value="group2">第二组</option>
+                                                <option value="group3">第三组</option>
+                                                <option value="group4">第四组</option>
+                                                <option value="group5">第五组</option>
+                                                <option value="group6">第六组</option>
+                                                <option value="group7">第七组</option>
+                                                <option value="group8">第八组</option>
+                                                <option value="group9">第九组</option>
+                                                <option value="group10">第十组</option>
+                                                <option value="group11">第十一组</option>
+                                                <option value="group12">第十二组</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-sm-3" style="text-align: center; font-size: 24px;">
+                                            <span>
+                                                VS
+                                            </span>
+                                        </div>
+                                        <div class="col-sm-3">
+                                            <select class="form-control pull-right" name="part2-groupTwo" id="part2-groupTwo">
+                                                <option value="" class="part2-select-default">选择组</option>
+                                                <option value="group1">第一组</option>
+                                                <option value="group2">第二组</option>
+                                                <option value="group3">第三组</option>
+                                                <option value="group4">第四组</option>
+                                                <option value="group5">第五组</option>
+                                                <option value="group6">第六组</option>
+                                                <option value="group7">第七组</option>
+                                                <option value="group8">第八组</option>
+                                                <option value="group9">第九组</option>
+                                                <option value="group10">第十组</option>
+                                                <option value="group11">第十一组</option>
+                                                <option value="group12">第十二组</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+
+
+                                    <div class="row part2-result" style="text-align: center">
+                                        <div class="col-sm-offset-1 col-sm-3 result">
+                                            <label><input type="checkbox" name="part2-q1-groupOne-win">&nbsp;胜</label>
+                                        </div>
+                                        <div class="col-sm-3" style="text-align: center;">
+                                            第一题
+                                        </div>
+                                        <div class="col-sm-3 result">
+                                            <label><input type="checkbox" name="part2-q1-groupTwo-win">&nbsp;胜</label>
+                                        </div>
+                                    </div>
+                                    <div class="row part2-result" style="text-align: center">
+                                        <div class="col-sm-offset-1 col-sm-3 result">
+                                            <label><input type="checkbox" name="part2-q2-groupOne-win">&nbsp;胜</label>
+                                        </div>
+                                        <div class="col-sm-3" style="text-align: center;">
+                                            第二题
+                                        </div>
+                                        <div class="col-sm-3 result">
+                                            <label><input type="checkbox" name="part2-q2-groupTwo-win">&nbsp;胜</label>
+                                        </div>
+                                    </div>
+                                    <div class="row part2-result" style="text-align: center">
+                                        <div class="col-sm-offset-1 col-sm-3 result">
+                                            <label><input type="checkbox" name="part2-q3-groupOne-win">&nbsp;胜</label>
+                                        </div>
+                                        <div class="col-sm-3" style="text-align: center;">
+                                            第三题
+                                        </div>
+                                        <div class="col-sm-3 result">
+                                            <label><input type="checkbox" name="part2-q3-groupTwo-win">&nbsp;胜</label>
+                                        </div>
+                                    </div>
+                                    <div class="row part2-result" style="text-align: center">
+                                        <div class="col-sm-offset-1 col-sm-3 result">
+                                            <label><input type="checkbox" name="part2-q4-groupOne-win">&nbsp;胜</label>
+                                        </div>
+                                        <div class="col-sm-3" style="text-align: center;">
+                                            第四题
+                                        </div>
+                                        <div class="col-sm-3 result">
+                                            <label><input type="checkbox" name="part2-q4-groupTwo-win">&nbsp;胜</label>
+                                        </div>
+                                    </div>
+                                    <div class="row part2-result" style="text-align: center">
+                                        <div class="col-sm-offset-1 col-sm-3 result">
+                                            <label><input type="checkbox" name="part2-q5-groupOne-win">&nbsp;胜</label>
+                                        </div>
+                                        <div class="col-sm-3" style="text-align: center;">
+                                            第五题
+                                        </div>
+                                        <div class="col-sm-3 result">
+                                            <label><input type="checkbox" name="part2-q5-groupTwo-win">&nbsp;胜</label>
+                                        </div>
+                                    </div>
+                                    <div class="row" style="text-align: center;">
+                                        <div class="col-sm-offset-4 col-sm-3" style="margin-top: 10px;">
+                                            <button class="btn btn-primary" onclick="Part2Submit();" id="part2-submit"> <span class="glyphicon glyphicon-hdd"></span>&nbsp;保存成绩</button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-sm-2" id="part2-btn">
+                                    <button class="btn btn-success" onclick="Part2Next();" id="part2-next"> <span class="glyphicon glyphicon-forward"></span>&nbsp;下一个</button>
+                                </div>
+                            </div>
+
+                    </div>
+                    <div class="col-sm-4 containBox">
+                        <div class="panel-group" id="part2-accordion">
+                            <div class="panel panel-default">
+                                <div class="panel-heading">
+                                    <h4 class="panel-title">
+                                        <a data-toggle="collapse" data-parent="#part2-accordion"
+                                           href="#part2-collapseOne">
+                                            查看服务器返回信息
+                                        </a>
+                                    </h4>
+                                </div>
+                                <div id="part2-collapseOne" class="panel-collapse collapse in">
+                                    <div class="panel-body" id="part2-msg">
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 亲友助阵控制页面内容 -->
+            <div id="extraPart" style="display: none;">
+                <div class="row">
+                    <div class="col-sm-8 containBox">
+                        <h3 style="text-align: center;">做对的组</h3>
+                        <hr>
+                        <div class="row">
+                            <div class="col-sm-2">
+                                <label><input type="checkbox" name="extraPart-group" value="group1">第一组 </label>
+                            </div>
+                            <div class="col-sm-2">
+                                <label><input type="checkbox" name="extraPart-group" value="group2">第二组 </label>
+                            </div>
+                            <div class="col-sm-2">
+                                <label><input type="checkbox" name="extraPart-group" value="group3">第三组 </label>
+                            </div>
+                            <div class="col-sm-2">
+                                <label><input type="checkbox" name="extraPart-group" value="group4">第四组 </label>
+                            </div>
+                            <div class="col-sm-2">
+                                <label><input type="checkbox" name="extraPart-group" value="group5">第五组 </label>
+                            </div>
+                            <div class="col-sm-2">
+                                <label><input type="checkbox" name="extraPart-group" value="group6">第六组 </label>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-2">
+                                <label><input type="checkbox" name="extraPart-group" value="group7">第七组 </label>
+                            </div>
+                            <div class="col-sm-2">
+                                <label><input type="checkbox" name="extraPart-group" value="group8">第八组 </label>
+                            </div>
+                            <div class="col-sm-2">
+                                <label><input type="checkbox" name="extraPart-group" value="group9">第九组 </label>
+                            </div>
+                            <div class="col-sm-2">
+                                <label><input type="checkbox" name="extraPart-group" value="group10">第十组 </label>
+                            </div>
+                            <div class="col-sm-2">
+                                <label><input type="checkbox" name="extraPart-group" value="group11">第十一组 </label>
+                            </div>
+                            <div class="col-sm-2">
+                                <label><input type="checkbox" name="extraPart-group" value="group12">第十二组 </label>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-12" style="margin-top: 10px; text-align: center;">
+                                <button class="btn btn-primary" id="extraPartSubmit" onclick="extraPartSubmit();"><span class="glyphicon glyphicon-hdd"></span>&nbsp;提交成绩</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-4 containBox">
+                        <div class="panel-group" id="extraPart-accordion">
+                            <div class="panel panel-default">
+                                <div class="panel-heading">
+                                    <h4 class="panel-title">
+                                        <a data-toggle="collapse" data-parent="#extraPart-accordion"
+                                           href="#extraPart-collapseOne">
+                                            查看服务器返回信息
+                                        </a>
+                                    </h4>
+                                </div>
+                                <div id="extraPart-collapseOne" class="panel-collapse collapse in">
+                                    <div class="panel-body" id="extraPart-msg">
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 第三轮控制页面内容 -->
+            <div id="part3" style="display: none;">
+                <div class="row">
+                    <div class="col-sm-8 containBox">
+                        <div class="thumbnail">
+                            <img class="img-rounded img-responsive" src="img/WallPicture.jpg">
+                            <p>欢迎参赛</p>
+                        </div>
+                        <div class="form-group pull-left">
+                            <label for="part3-group">当前组：</label>
+                            <select class="form-control" name="part3-group" id="part3-group">
+                                <option value="group1">第一组</option>
+                                <option value="group2">第二组</option>
+                                <option value="group3">第三组</option>
+                                <option value="group4">第四组</option>
+                                <option value="group5">第五组</option>
+                                <option value="group6">第六组</option>
+                                <option value="group7">第七组</option>
+                                <option value="group8">第八组</option>
+                                <option value="group9">第九组</option>
+                                <option value="group10">第十组</option>
+                                <option value="group11">第十一组</option>
+                                <option value="group12">第十二组</option>
+                                <option value="extraGroup">加赛</option>
+                            </select>
+                            <button class="btn" onclick="Part3Start();" id="part3-start"><span class="glyphicon glyphicon-play"></span>&nbsp;回合开始</button>
+                            <button class="btn btn-primary" onclick="Part3End();" id="part3-end" disabled="disabled"><span class="glyphicon glyphicon-minus-sign">&nbsp;时间到</span></button>
+                        </div>
+                        <div class="pull-right" id="part3-btn">
+                            <button class="btn btn-danger" style="margin:10px 40px;" onclick="Part3Action('breakLaw');document.getElementById('error').play();" disabled="disabled"><span class="glyphicon glyphicon-remove"></span>&nbsp;犯规</button>
+                            <button class="btn btn-warning" style="margin:10px 40px;" onclick="Part3Action('skip');" disabled="disabled"><span class="glyphicon glyphicon-warning-sign"></span>&nbsp;跳过</button>
+                            <button class="btn btn-success" style="margin:10px 40px;" onclick="Part3Action('correct');document.getElementById('right').play();" disabled="disabled"><span class="glyphicon glyphicon-ok"></span>&nbsp;正确</button>
+                        </div>
+
+                    </div>
+                    <div class="col-sm-4 containBox">
+                        <div class="panel-group" id="part3-accordion">
+                            <div class="panel panel-default">
+                                <div class="panel-heading">
+                                    <h4 class="panel-title">
+                                        <a data-toggle="collapse" data-parent="#part3-accordion"
+                                           href="#part3-collapseOne">
+                                            查看服务器返回信息
+                                        </a>
+                                    </h4>
+                                </div>
+                                <div id="part3-collapseOne" class="panel-collapse collapse in">
+                                    <div class="panel-body" id="part3-msg">
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 第四轮控制页面内容 -->
+            <div id="part4" style="display: none;">
+                <div class="row">
+                    <div class="col-sm-8 containBox">
+                        <div class="row">
+                            <div class="col-sm-2">
+                                <button class="btn btn-primary" id="showResponder" onclick="showResponder();">打开抢答器</button>
+                            </div>
+                            <div class="col-sm-2">
+                                <button class="btn btn-primary" id="resetResponder" onclick="resetResponder();">复位抢答器</button>
+                            </div>
+                            <div class="col-sm-offset-6 col-sm-2">
+                                <button class="btn btn-primary" id="showChengyu" onclick="showChengyu();">&nbsp;显示成语&nbsp;</button>
+                            </div>
+                        </div>
+                        <div class="row" style="margin-bottom: 10px;">
+                            <div class="col-sm-offset-4 col-sm-3">
+                                <h3 style="text-align: center;">比赛结果</h3><hr>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-offset-1 col-sm-3">
+                                <select class="form-control pull-left" name="part4-groupOne" id="part4-groupOne">
+                                    <option value="" class="part4-select-default">选择组</option>
+                                    <option value="group1">第一组</option>
+                                    <option value="group2">第二组</option>
+                                    <option value="group3">第三组</option>
+                                    <option value="group4">第四组</option>
+                                    <option value="group5">第五组</option>
+                                    <option value="group6">第六组</option>
+                                    <option value="group7">第七组</option>
+                                    <option value="group8">第八组</option>
+                                    <option value="group9">第九组</option>
+                                    <option value="group10">第十组</option>
+                                    <option value="group11">第十一组</option>
+                                    <option value="group12">第十二组</option>
+                                </select>
+                            </div>
+                            <div class="col-sm-3" style="text-align: center; font-size: 24px;">
+                                            <span>
+                                                VS
+                                            </span>
+                            </div>
+                            <div class="col-sm-3">
+                                <select class="form-control pull-right" name="part4-groupTwo" id="part4-groupTwo">
+                                    <option value="" class="part4-select-default">选择组</option>
+                                    <option value="group1">第一组</option>
+                                    <option value="group2">第二组</option>
+                                    <option value="group3">第三组</option>
+                                    <option value="group4">第四组</option>
+                                    <option value="group5">第五组</option>
+                                    <option value="group6">第六组</option>
+                                    <option value="group7">第七组</option>
+                                    <option value="group8">第八组</option>
+                                    <option value="group9">第九组</option>
+                                    <option value="group10">第十组</option>
+                                    <option value="group11">第十一组</option>
+                                    <option value="group12">第十二组</option>
+                                </select>
+                            </div>
+                        </div>
+
+
+
+                        <div class="row part4-result" style="text-align: center">
+                            <div class="col-sm-offset-1 col-sm-3 result">
+                                <label><input type="checkbox" name="part4-q1-groupOne-win">&nbsp;胜</label>
+                            </div>
+                            <div class="col-sm-3" style="text-align: center;">
+                                第一题
+                            </div>
+                            <div class="col-sm-3 result">
+                                <label><input type="checkbox" name="part4-q1-groupTwo-win">&nbsp;胜</label>
+                            </div>
+                        </div>
+                        <div class="row part4-result" style="text-align: center">
+                            <div class="col-sm-offset-1 col-sm-3 result">
+                                <label><input type="checkbox" name="part4-q2-groupOne-win">&nbsp;胜</label>
+                            </div>
+                            <div class="col-sm-3" style="text-align: center;">
+                                第二题
+                            </div>
+                            <div class="col-sm-3 result">
+                                <label><input type="checkbox" name="part4-q2-groupTwo-win">&nbsp;胜</label>
+                            </div>
+                        </div>
+                        <div class="row part4-result" style="text-align: center">
+                            <div class="col-sm-offset-1 col-sm-3 result">
+                                <label><input type="checkbox" name="part4-q3-groupOne-win">&nbsp;胜</label>
+                            </div>
+                            <div class="col-sm-3" style="text-align: center;">
+                                第三题
+                            </div>
+                            <div class="col-sm-3 result">
+                                <label><input type="checkbox" name="part4-q3-groupTwo-win">&nbsp;胜</label>
+                            </div>
+                        </div>
+                        <div class="row part4-result" style="text-align: center">
+                            <div class="col-sm-offset-1 col-sm-3 result">
+                                <label><input type="checkbox" name="part4-q4-groupOne-win">&nbsp;胜</label>
+                            </div>
+                            <div class="col-sm-3" style="text-align: center;">
+                                第四题
+                            </div>
+                            <div class="col-sm-3 result">
+                                <label><input type="checkbox" name="part4-q4-groupTwo-win">&nbsp;胜</label>
+                            </div>
+                        </div>
+                        <div class="row part4-result" style="text-align: center">
+                            <div class="col-sm-offset-1 col-sm-3 result">
+                                <label><input type="checkbox" name="part4-q5-groupOne-win">&nbsp;胜</label>
+                            </div>
+                            <div class="col-sm-3" style="text-align: center;">
+                                第五题
+                            </div>
+                            <div class="col-sm-3 result">
+                                <label><input type="checkbox" name="part4-q5-groupTwo-win">&nbsp;胜</label>
+                            </div>
+                        </div>
+                        <div class="row" style="text-align: center;">
+                            <div class="col-sm-offset-4 col-sm-3" style="margin-top: 10px;">
+                                <button class="btn btn-primary" onclick="Part4Submit();" id="part4-submit"> <span class="glyphicon glyphicon-hdd"></span>&nbsp;保存成绩</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-4 containBox">
+                        <div class="panel-group" id="part4-accordion">
+                            <div class="panel panel-default">
+                                <div class="panel-heading">
+                                    <h4 class="panel-title">
+                                        <a data-toggle="collapse" data-parent="#part4-accordion"
+                                           href="#part4-collapseOne">
+                                            查看服务器返回信息
+                                        </a>
+                                    </h4>
+                                </div>
+                                <div id="part4-collapseOne" class="panel-collapse collapse in">
+                                    <div class="panel-body" id="part4-msg">
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+        <div class="panel-footer text-center">计算机学院 --- 徐耀文，张无奇</div>
+    </div>
+    <audio src="audio/error.wav" controls="controls" id="error" style="visibility: hidden; display: none;">
+    </audio>
+    <audio src="audio/right.wav" controls="controls" id="right" style="visibility: hidden; display: none;">
+    </audio>
+</div>
+
+<!-- 提示模态框 -->
+<div class="modal fade" id="alertModal" tabindex="-1" role="dialog" aria-labelledby="alertModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                <h4 class="modal-title" id="alertModalLabel">提示</h4>
+            </div>
+            <div class="modal-body" id="alrt"></div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+            </div>
+        </div><!-- /.modal-content -->
+    </div><!-- /.modal -->
+</div>
+
+<script>
+    $(".part2-result").children(".result").children("label").children("input").click(function () {
+        if ($(this).is(":checked")){
+            if ($(this).parent("label").parent(".result").siblings(".result").children("label").children("input").is(":checked")){
+                $(this).parent("label").parent(".result").siblings(".result").children("label").children("input").prop("checked",false);
+            }
+        }
+    });
+
+    $(".part4-result").children(".result").children("label").children("input").click(function () {
+        if ($(this).is(":checked")){
+            if ($(this).parent("label").parent(".result").siblings(".result").children("label").children("input").is(":checked")){
+                $(this).parent("label").parent(".result").siblings(".result").children("label").children("input").prop("checked",false);
+            }
+        }
+    });
+</script>
+</body>
+</html>
